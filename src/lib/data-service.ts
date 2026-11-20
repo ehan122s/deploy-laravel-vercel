@@ -504,30 +504,174 @@ async function checkPrisma(): Promise<boolean> {
   return isPrismaAvailable;
 }
 
+let hasSyncedWithDatabase = false;
+async function syncFromDatabase(): Promise<void> {
+  if (hasSyncedWithDatabase) return;
+  if (!(await checkPrisma())) return;
+  try {
+    const branches = await prisma.branch.findMany({ orderBy: { code: "asc" } });
+    const users = await prisma.user.findMany();
+    const categories = await prisma.transactionCategory.findMany({ where: { isActive: true }, orderBy: { name: "asc" } });
+    const transactions = await prisma.transaction.findMany({
+      include: { branch: true, user: true, category: true },
+      orderBy: { createdAt: "desc" },
+      take: 200,
+    });
+    const mutations = await prisma.balanceMutation.findMany({
+      include: { branch: true, user: true },
+      orderBy: { timestamp: "desc" },
+      take: 200,
+    });
+    const auditLogs = await prisma.auditLog.findMany({
+      orderBy: { timestamp: "desc" },
+      take: 100,
+    });
+
+    if (branches.length > 0 && users.length > 0) {
+      const store = loadStore();
+      store.branches = branches.map((b) => ({
+        id: b.id,
+        code: b.code,
+        name: b.name,
+        address: b.address || "",
+        phone: b.phone || "",
+        isActive: b.isActive,
+        initialCashBalance: Number(b.initialCashBalance),
+        initialBankBalance: Number(b.initialBankBalance),
+        currentCashBalance: Number(b.currentCashBalance),
+        currentBankBalance: Number(b.currentBankBalance),
+        createdAt: b.createdAt.toISOString(),
+        updatedAt: b.updatedAt.toISOString(),
+      }));
+
+      store.users = users.map((u) => ({
+        id: u.id,
+        username: u.username,
+        passwordHash: u.passwordHash,
+        name: u.name,
+        role: u.role,
+        isActive: u.isActive,
+        branchId: u.branchId,
+        createdAt: u.createdAt.toISOString(),
+        updatedAt: u.updatedAt.toISOString(),
+      }));
+
+      if (categories.length > 0) {
+        store.categories = categories.map((c) => ({
+          id: c.id,
+          code: c.code,
+          name: c.name,
+          description: c.description || "",
+          cashFlow: c.cashFlow,
+          bankFlow: c.bankFlow,
+          defaultCustomerAdmin: Number(c.defaultCustomerAdmin),
+          defaultBankFee: Number(c.defaultBankFee),
+          isActive: c.isActive,
+        }));
+      }
+
+      if (transactions.length > 0) {
+        store.transactions = transactions.map((t) => ({
+          id: t.id,
+          transactionNo: t.transactionNo,
+          branchId: t.branchId,
+          branchName: t.branch.name,
+          userId: t.userId,
+          cashierName: t.user.name,
+          categoryId: t.categoryId,
+          categoryCode: t.category.code,
+          categoryName: t.category.name,
+          customerName: t.customerName,
+          nominal: Number(t.nominal),
+          customerAdmin: Number(t.customerAdmin),
+          bankFee: Number(t.bankFee),
+          netProfit: Number(t.netProfit),
+          cashReceived: Number(t.cashReceived),
+          cashGiven: Number(t.cashGiven),
+          bankReceived: Number(t.bankReceived),
+          bankDeducted: Number(t.bankDeducted),
+          paymentMethod: "TUNAI",
+          notes: t.notes,
+          status: t.status,
+          reversalReason: t.reversalReason,
+          reversedAt: t.reversedAt ? t.reversedAt.toISOString() : null,
+          reversedBy: t.reversedByUserId,
+          idempotencyKey: t.idempotencyKey,
+          createdAt: t.createdAt.toISOString(),
+          updatedAt: t.updatedAt.toISOString(),
+        }));
+      }
+
+      if (mutations.length > 0) {
+        store.mutations = mutations.map((m) => ({
+          id: m.id,
+          branchId: m.branchId,
+          branchName: m.branch.name,
+          userId: m.userId,
+          userName: m.user.name,
+          accountType: m.accountType,
+          mutationType: m.mutationType,
+          flowDirection: Number(m.amount) >= 0 ? FlowDirection.IN : FlowDirection.OUT,
+          amount: Math.abs(Number(m.amount)),
+          balanceBefore: Number(m.balanceBefore),
+          balanceAfter: Number(m.balanceAfter),
+          referenceId: m.transactionId,
+          description: m.reason,
+          createdAt: m.timestamp.toISOString(),
+        }));
+      }
+
+      if (auditLogs.length > 0) {
+        store.auditLogs = auditLogs.map((a) => ({
+          id: a.id,
+          userId: a.userId,
+          userName: null,
+          branchId: a.branchId,
+          action: a.action,
+          resource: a.entity,
+          details: a.newValue || a.action,
+          ipAddress: a.ipAddress,
+          createdAt: a.timestamp.toISOString(),
+        }));
+      }
+
+      saveStore(store);
+      hasSyncedWithDatabase = true;
+    }
+  } catch (err) {
+    console.warn("Notice: Database sync note:", err);
+  }
+}
+
 export class DataService {
   // === BRANCHES ===
   static async getBranches(): Promise<BranchData[]> {
+    await syncFromDatabase();
     const store = loadStore();
     return store.branches;
   }
 
   static async getBranchById(id: string): Promise<BranchData | null> {
+    await syncFromDatabase();
     const store = loadStore();
     return store.branches.find((b) => b.id === id || b.code === id) || null;
   }
 
   // === USERS & AUTH ===
   static async getUsers(): Promise<UserData[]> {
+    await syncFromDatabase();
     const store = loadStore();
     return store.users;
   }
 
   static async getUserByUsername(username: string): Promise<UserData | null> {
+    await syncFromDatabase();
     const store = loadStore();
     return store.users.find((u) => u.username.toLowerCase() === username.toLowerCase()) || null;
   }
 
   static async getUserById(id: string): Promise<UserData | null> {
+    await syncFromDatabase();
     const store = loadStore();
     return store.users.find((u) => u.id === id) || null;
   }
@@ -559,6 +703,24 @@ export class DataService {
     store.users.push(newUser);
     saveStore(store);
 
+    if (await checkPrisma()) {
+      try {
+        await prisma.user.create({
+          data: {
+            id: newUser.id,
+            username: newUser.username,
+            passwordHash: newUser.passwordHash,
+            name: newUser.name,
+            role: Role.CASHIER,
+            isActive: true,
+            branchId: newUser.branchId,
+          },
+        });
+      } catch (err) {
+        console.warn("Prisma createCashier note:", err);
+      }
+    }
+
     await this.logAudit({
       userId: null,
       userName: "Owner Action",
@@ -579,6 +741,17 @@ export class DataService {
     user.isActive = isActive;
     user.updatedAt = new Date().toISOString();
     saveStore(store);
+
+    if (await checkPrisma()) {
+      try {
+        await prisma.user.update({
+          where: { id },
+          data: { isActive },
+        });
+      } catch (err) {
+        console.warn("Prisma toggleUserStatus note:", err);
+      }
+    }
 
     await this.logAudit({
       userId: null,
@@ -668,13 +841,18 @@ export class DataService {
       }
     }
 
-    const branch = store.branches.find((b) => b.id === input.branchId);
+    const branch = store.branches.find((b) => b.id === input.branchId || b.code === input.branchId);
     if (!branch) throw new Error("Cabang tidak valid.");
 
-    const user = store.users.find((u) => u.id === input.userId);
+    const user = store.users.find(
+      (u) =>
+        u.id === input.userId ||
+        u.username.toLowerCase() === input.userId.toLowerCase() ||
+        u.username.toLowerCase() === input.userId.replace(/^user-/, "").toLowerCase()
+    );
     if (!user) throw new Error("Kasir tidak ditemukan.");
 
-    const category = store.categories.find((c) => c.code === input.categoryCode);
+    const category = store.categories.find((c) => c.code === input.categoryCode || c.id === input.categoryCode);
     if (!category) throw new Error("Kategori transaksi tidak ditemukan.");
 
     // 2. Perform accurate financial calculation
@@ -791,6 +969,76 @@ export class DataService {
     store.transactions.unshift(newTx);
     saveStore(store);
 
+    if (await checkPrisma()) {
+      try {
+        await prisma.$transaction(async (tx) => {
+          await tx.branch.update({
+            where: { id: branch.id },
+            data: {
+              currentCashBalance: branch.currentCashBalance,
+              currentBankBalance: branch.currentBankBalance,
+            },
+          });
+
+          await tx.transaction.create({
+            data: {
+              id: newTx.id,
+              transactionNo: newTx.transactionNo,
+              branchId: newTx.branchId,
+              userId: newTx.userId,
+              categoryId: newTx.categoryId,
+              customerName: newTx.customerName,
+              nominal: newTx.nominal,
+              customerAdmin: newTx.customerAdmin,
+              bankFee: newTx.bankFee,
+              netProfit: newTx.netProfit,
+              cashReceived: newTx.cashReceived,
+              cashGiven: newTx.cashGiven,
+              bankDeducted: newTx.bankDeducted,
+              bankReceived: newTx.bankReceived,
+              notes: newTx.notes,
+              status: newTx.status,
+              idempotencyKey: newTx.idempotencyKey || undefined,
+            },
+          });
+
+          if (calc.cashFlowChange !== 0) {
+            await tx.balanceMutation.create({
+              data: {
+                branchId: branch.id,
+                userId: user.id,
+                transactionId: newTx.id,
+                mutationType: MutationType.TRANSACTION,
+                accountType: AccountType.CASH,
+                amount: calc.cashFlowChange,
+                balanceBefore: cashBefore,
+                balanceAfter: cashAfter,
+                reason: `Transaksi ${category.name} (${transactionNo}) - Kas Fisik`,
+              },
+            });
+          }
+
+          if (calc.bankFlowChange !== 0) {
+            await tx.balanceMutation.create({
+              data: {
+                branchId: branch.id,
+                userId: user.id,
+                transactionId: newTx.id,
+                mutationType: MutationType.TRANSACTION,
+                accountType: AccountType.BANK,
+                amount: calc.bankFlowChange,
+                balanceBefore: bankBefore,
+                balanceAfter: bankAfter,
+                reason: `Transaksi ${category.name} (${transactionNo}) - Saldo Rekening/EDC`,
+              },
+            });
+          }
+        });
+      } catch (err) {
+        console.warn("Prisma write note during transaction:", err);
+      }
+    }
+
     await this.logAudit({
       userId: user.id,
       userName: user.name,
@@ -820,7 +1068,12 @@ export class DataService {
     const branch = store.branches.find((b) => b.id === tx.branchId);
     if (!branch) throw new Error("Cabang tidak valid.");
 
-    const user = store.users.find((u) => u.id === input.userId);
+    const user = store.users.find(
+      (u) =>
+        u.id === input.userId ||
+        u.username.toLowerCase() === input.userId.toLowerCase() ||
+        u.username.toLowerCase() === input.userId.replace(/^user-/, "").toLowerCase()
+    );
     const userName = user ? user.name : "System";
 
     const timestamp = new Date().toISOString();
@@ -918,7 +1171,12 @@ export class DataService {
     const branch = store.branches.find((b) => b.id === input.branchId);
     if (!branch) throw new Error("Cabang sumber tidak ditemukan.");
 
-    const user = store.users.find((u) => u.id === input.userId);
+    const user = store.users.find(
+      (u) =>
+        u.id === input.userId ||
+        u.username.toLowerCase() === input.userId.toLowerCase() ||
+        u.username.toLowerCase() === input.userId.replace(/^user-/, "").toLowerCase()
+    );
     const userName = user ? user.name : "Owner";
     const timestamp = new Date().toISOString();
     const amount = Number(input.amount);
@@ -1076,6 +1334,32 @@ export class DataService {
     branch.updatedAt = timestamp;
     saveStore(store);
 
+    if (await checkPrisma()) {
+      try {
+        await prisma.branch.update({
+          where: { id: branch.id },
+          data: {
+            currentCashBalance: branch.currentCashBalance,
+            currentBankBalance: branch.currentBankBalance,
+          },
+        });
+        if (input.targetBranchId) {
+          const tb = store.branches.find((b) => b.id === input.targetBranchId);
+          if (tb) {
+            await prisma.branch.update({
+              where: { id: tb.id },
+              data: {
+                currentCashBalance: tb.currentCashBalance,
+                currentBankBalance: tb.currentBankBalance,
+              },
+            });
+          }
+        }
+      } catch (err) {
+        console.warn("Prisma branch balance update note:", err);
+      }
+    }
+
     await this.logAudit({
       userId: input.userId,
       userName,
@@ -1123,6 +1407,33 @@ export class DataService {
     };
     store.auditLogs.unshift(log);
     saveStore(store);
+
+    if (await checkPrisma()) {
+      try {
+        const matchedUser = data.userId
+          ? store.users.find(
+              (u) =>
+                u.id === data.userId ||
+                u.username.toLowerCase() === data.userId!.toLowerCase() ||
+                u.username.toLowerCase() === data.userId!.replace(/^user-/, "").toLowerCase()
+            )
+          : null;
+
+        await prisma.auditLog.create({
+          data: {
+            id: log.id,
+            userId: matchedUser ? matchedUser.id : undefined,
+            branchId: data.branchId || undefined,
+            action: data.action,
+            entity: data.resource,
+            newValue: data.details,
+            ipAddress: data.ipAddress || "127.0.0.1",
+          },
+        });
+      } catch (err) {
+        console.warn("Prisma audit log note:", err);
+      }
+    }
   }
 
   static async getAuditLogs(limit: number = 100): Promise<AuditLogData[]> {

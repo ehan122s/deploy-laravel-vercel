@@ -34,3 +34,5 @@ yarn-error.log*
 /flutter-app/
 /prisma/pgdata/
 /prisma/pglite-data/
+.neon
+/prisma/pglite-db/
