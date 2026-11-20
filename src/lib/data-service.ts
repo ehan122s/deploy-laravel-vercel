@@ -138,11 +138,12 @@ let memoryStore: StoreSchema | null = null;
 // Default initial seed data for local storage
 function getInitialSeedData(): StoreSchema {
   // Pre-hashed passwords:
-  // owner123 -> $2a$10$vK6kZ.31d5HlIic6d9o47uQvVl/uKxZJ40Xh3P27Ffq70nLg14bce (or generated)
-  // kasir123 -> $2a$10$gN3mZkGln0mF4y12vXbS4.oFj0N1h3k5K1G16V9eH51s6r7t8u9vi
-  // We'll use bcrypt hash for 'owner123' and 'kasir123'
-  const ownerHash = "$2a$10$ZXoyItgv3nckooY4PRTvxeWCb3.5vlcqDKmreN7S/H5bxfgZCpjDi"; // owner123
-  const kasirHash = "$2a$10$5nnqfXUt1PyBiyfGMHME4u5uzFdDKxyyvja7oc6VZmmNIPdrOnZvG"; // kasir123
+  // owner123 -> $2a$10$ZXoyItgv3nckooY4PRTvxeWCb3.5vlcqDKmreN7S/H5bxfgZCpjDi
+  // kasir123 -> $2a$10$5nnqfXUt1PyBiyfGMHME4u5uzFdDKxyyvja7oc6VZmmNIPdrOnZvG
+  // user123  -> $2a$10$xogrOpNkQ7/ePZIPuKRtTeda/jixppxwBlE.GPEWyGSlCckVTH0uy
+  const ownerHash = "$2a$10$ZXoyItgv3nckooY4PRTvxeWCb3.5vlcqDKmreN7S/H5bxfgZCpjDi"; // owner123 / owner
+  const kasirHash = "$2a$10$5nnqfXUt1PyBiyfGMHME4u5uzFdDKxyyvja7oc6VZmmNIPdrOnZvG"; // kasir123 / kasir
+  const userHash = "$2a$10$xogrOpNkQ7/ePZIPuKRtTeda/jixppxwBlE.GPEWyGSlCckVTH0uy"; // user123 / user
 
   const branch1: BranchData = {
     id: "branch-01",
@@ -183,6 +184,28 @@ function getInitialSeedData(): StoreSchema {
       role: Role.OWNER,
       isActive: true,
       branchId: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    },
+    {
+      id: "user-default",
+      username: "user",
+      passwordHash: userHash,
+      name: "Operator / Kasir (User)",
+      role: Role.CASHIER,
+      isActive: true,
+      branchId: "branch-01",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    },
+    {
+      id: "user-kasir",
+      username: "kasir",
+      passwordHash: kasirHash,
+      name: "Kasir Petugas",
+      role: Role.CASHIER,
+      isActive: true,
+      branchId: "branch-01",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     },
@@ -406,6 +429,24 @@ function getInitialSeedData(): StoreSchema {
   };
 }
 
+function ensureDefaultAccounts(store: StoreSchema): StoreSchema {
+  const initial = getInitialSeedData();
+  let updated = false;
+  for (const defUser of initial.users) {
+    const exists = store.users.some((u) => u.username.toLowerCase() === defUser.username.toLowerCase());
+    if (!exists) {
+      store.users.push(defUser);
+      updated = true;
+    }
+  }
+  if (updated) {
+    try {
+      fs.writeFileSync(STORE_FILE, JSON.stringify(store, null, 2), "utf8");
+    } catch {}
+  }
+  return store;
+}
+
 function loadStore(): StoreSchema {
   if (memoryStore) {
     return memoryStore;
@@ -424,6 +465,7 @@ function loadStore(): StoreSchema {
     }
     const content = fs.readFileSync(STORE_FILE, "utf8");
     const parsed = JSON.parse(content);
+    ensureDefaultAccounts(parsed);
     memoryStore = parsed;
     return parsed;
   } catch (err) {

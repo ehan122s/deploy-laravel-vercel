@@ -49,9 +49,10 @@ async function main() {
 
   console.log(`🏢 Branches created: ${branch1.name} & ${branch2.name}`);
 
-  // 3. Buat Pengguna: Owner & Kasir masing-masing cabang
+  // 3. Buat Pengguna: Owner, User, Kasir masing-masing cabang
   const passwordSalt = await bcrypt.genSalt(10);
   const ownerPasswordHash = await bcrypt.hash("owner123", passwordSalt);
+  const userPasswordHash = await bcrypt.hash("user123", passwordSalt);
   const cashierPasswordHash = await bcrypt.hash("kasir123", passwordSalt);
 
   const owner = await prisma.user.create({
@@ -61,6 +62,28 @@ async function main() {
       name: "Bapak Hendra (Owner BRILink)",
       role: Role.OWNER,
       branchId: null, // Akses global seluruh cabang
+      isActive: true,
+    },
+  });
+
+  const defaultUser = await prisma.user.create({
+    data: {
+      username: "user",
+      passwordHash: userPasswordHash,
+      name: "Operator / Kasir (User)",
+      role: Role.CASHIER,
+      branchId: branch1.id,
+      isActive: true,
+    },
+  });
+
+  const defaultKasir = await prisma.user.create({
+    data: {
+      username: "kasir",
+      passwordHash: cashierPasswordHash,
+      name: "Kasir Petugas",
+      role: Role.CASHIER,
+      branchId: branch1.id,
       isActive: true,
     },
   });
@@ -87,7 +110,7 @@ async function main() {
     },
   });
 
-  console.log(`👤 Users created: ${owner.username} (Owner), ${cashier1.username} (Kasir 1), ${cashier2.username} (Kasir 2)`);
+  console.log(`👤 Users created: ${owner.username} (Owner), ${defaultUser.username} (User), ${defaultKasir.username} (Kasir), ${cashier1.username} (Kasir 1), ${cashier2.username} (Kasir 2)`);
 
   // 4. Buat Kategori Transaksi BRILink Lengkap
   const categories = [

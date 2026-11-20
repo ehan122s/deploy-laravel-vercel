@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { loginAction, AuthState } from "@/app/actions/auth-actions";
-import { ShieldCheck, Building2, User, KeyRound, ArrowRight, Sparkles, AlertCircle } from "lucide-react";
+import { loginAction } from "@/app/actions/auth-actions";
+import { ShieldCheck, User, KeyRound, ArrowRight, AlertCircle } from "lucide-react";
 import Link from "next/link";
 
 export default function LoginPage() {
@@ -25,12 +25,6 @@ export default function LoginPage() {
     }
   };
 
-  const handleQuickFill = (u: string, p: string) => {
-    setUsername(u);
-    setPassword(p);
-    setError(null);
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#001D40] via-[#002D62] to-[#0A4384] flex flex-col justify-center items-center p-4">
       <div className="w-full max-w-md">
@@ -48,7 +42,7 @@ export default function LoginPage() {
           <div className="flex items-center justify-between pb-4 mb-6 border-b border-slate-100">
             <div>
               <h2 className="text-lg font-bold text-slate-800">Masuk ke Sistem</h2>
-              <p className="text-xs text-slate-500">Pilih akun Owner atau Kasir bertugas</p>
+              <p className="text-xs text-slate-500">Silakan masukkan username dan password Anda</p>
             </div>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
               <ShieldCheck className="w-3.5 h-3.5" />
@@ -79,10 +73,12 @@ export default function LoginPage() {
                   name="username"
                   type="text"
                   required
+                  autoFocus
+                  autoComplete="username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Masukkan username"
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#002D62] focus:bg-white transition-all text-slate-900"
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#002D62] focus:bg-white transition-all text-slate-900"
                 />
               </div>
             </div>
@@ -99,10 +95,11 @@ export default function LoginPage() {
                   name="password"
                   type="password"
                   required
+                  autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Masukkan password"
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#002D62] focus:bg-white transition-all text-slate-900"
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#002D62] focus:bg-white transition-all text-slate-900"
                 />
               </div>
             </div>
@@ -110,7 +107,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-2 py-3 px-4 bg-[#002D62] hover:bg-[#003B7E] active:scale-[0.99] text-white font-semibold rounded-xl text-sm shadow-lg shadow-blue-900/20 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+              className="w-full mt-2 py-3.5 px-4 bg-[#002D62] hover:bg-[#003B7E] active:scale-[0.99] text-white font-semibold rounded-xl text-sm shadow-lg shadow-blue-900/20 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>
@@ -125,42 +122,6 @@ export default function LoginPage() {
               )}
             </button>
           </form>
-
-          {/* Quick Demo Login Preset Buttons */}
-          <div className="mt-6 pt-5 border-t border-slate-100">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2.5">
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              <span>Akses Cepat Pengujian (1-Klik)</span>
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => handleQuickFill("owner", "owner123")}
-                className="p-2.5 rounded-xl border border-blue-200 bg-blue-50/70 hover:bg-blue-100/70 text-left transition-all group"
-              >
-                <p className="text-[10px] font-bold text-blue-900 uppercase">Owner</p>
-                <p className="text-xs font-semibold text-slate-700 truncate">Semua Cabang</p>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickFill("kasir1", "kasir123")}
-                className="p-2.5 rounded-xl border border-emerald-200 bg-emerald-50/70 hover:bg-emerald-100/70 text-left transition-all group"
-              >
-                <p className="text-[10px] font-bold text-emerald-800 uppercase">Kasir 1</p>
-                <p className="text-xs font-semibold text-slate-700 truncate">Cabang Pusat</p>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickFill("kasir2", "kasir123")}
-                className="p-2.5 rounded-xl border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100/70 text-left transition-all group"
-              >
-                <p className="text-[10px] font-bold text-indigo-800 uppercase">Kasir 2</p>
-                <p className="text-xs font-semibold text-slate-700 truncate">Cabang Pasar</p>
-              </button>
-            </div>
-          </div>
         </div>
 
         {/* Bottom Links */}
