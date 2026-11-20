@@ -1,0 +1,34 @@
+# Node modules & dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# Next.js build output
+/.next/
+/out/
+
+# Local data & environment variables
+/.data/
+.env
+.env*.local
+!.env.example
+
+# Vercel output
+.vercel
+
+# Debug & logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# OS & Editor
+.DS_Store
+*.pem
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Archived Flutter
+/flutter-app/

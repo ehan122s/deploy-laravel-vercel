@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#001633" />
+      <stop offset="50%" stop-color="#002D62" />
+      <stop offset="100%" stop-color="#07458C" />
+    </linearGradient>
+
+    <linearGradient id="emeraldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34D399" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+
+    <linearGradient id="cyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8" />
+      <stop offset="100%" stop-color="#0284C7" />
+    </linearGradient>
+
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000000" flood-opacity="0.35" />
+    </filter>
+  </defs>
+
+  <!-- Full Bleed Background for Maskable Icon -->
+  <rect width="512" height="512" fill="url(#bgGrad)" />
+
+  <!-- Center Graphic inside 70% safe zone -->
+  <g filter="url(#shadow)" transform="translate(0, 10)">
+    <!-- Outer Shield Frame -->
+    <path d="M 256 105 
+             L 360 145 
+             C 360 240 315 320 256 355 
+             C 197 320 152 240 152 145 
+             Z" 
+          fill="#001F47" 
+          stroke="url(#cyanGrad)" 
+          stroke-width="10" 
+          stroke-linejoin="round" />
+
+    <!-- Inner Emerald Core -->
+    <path d="M 256 140 
+             L 335 170 
+             C 335 245 300 305 256 332 
+             C 212 305 177 245 177 170 
+             Z" 
+          fill="url(#bgGrad)" />
+
+    <!-- Growth Dynamic Bars -->
+    <rect x="206" y="235" width="22" height="52" rx="6" fill="#38BDF8" />
+    <rect x="245" y="190" width="22" height="97" rx="6" fill="url(#emeraldGrad)" />
+    <rect x="284" y="215" width="22" height="72" rx="6" fill="#10B981" />
+
+    <!-- Dot / Verify -->
+    <circle cx="256" cy="175" r="12" fill="#34D399" />
+  </g>
+
+  <!-- Wordmark -->
+  <text x="256" y="415" 
+        text-anchor="middle" 
+        font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" 
+        font-size="38" 
+        font-weight="900" 
+        letter-spacing="4" 
+        fill="#FFFFFF">
+    BRILINK
+  </text>
+  <text x="256" y="445" 
+        text-anchor="middle" 
+        font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" 
+        font-size="16" 
+        font-weight="700" 
+        letter-spacing="5" 
+        fill="#34D399">
+    MANAGEMENT
+  </text>
+</svg>

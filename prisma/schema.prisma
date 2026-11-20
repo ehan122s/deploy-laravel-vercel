@@ -1,0 +1,237 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  CASHIER
+}
+
+enum TransactionStatus {
+  COMPLETED
+  REVERSED
+  PENDING
+}
+
+enum AccountType {
+  CASH    // Uang Tunai Fisik di laci kasir
+  BANK    // Saldo Rekening / Kuota Mesin EDC / BRILink
+}
+
+enum MutationType {
+  INITIAL_BALANCE       // Saldo Awal Cabang
+  CAPITAL_INJECTION     // Penambahan Modal oleh Owner
+  CAPITAL_WITHDRAWAL    // Penarikan Modal oleh Owner
+  INTER_BRANCH_TRANSFER // Transfer Saldo Antar Cabang
+  TRANSACTION           // Mutasi dari Transaksi Customer
+  TRANSACTION_REVERSAL  // Koreksi / Pembatalan Transaksi
+  ADJUSTMENT            // Penyesuaian Saldo Berita Acara
+}
+
+enum ShiftStatus {
+  OPEN
+  CLOSED
+}
+
+enum FlowDirection {
+  IN     // Uang / Saldo Bertambah
+  OUT    // Uang / Saldo Berkurang
+  NONE   // Tidak ada perubahan di akun ini
+}
+
+model User {
+  id           String      @id @default(uuid())
+  username     String      @unique
+  passwordHash String
+  name         String
+  role         Role        @default(CASHIER)
+  isActive     Boolean     @default(true)
+  branchId     String?     // NULL untuk OWNER, terikat cabang untuk CASHIER
+  branch       Branch?     @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  transactions     Transaction[]
+  mutations        BalanceMutation[]
+  shifts           CashierShift[]
+  auditLogs        AuditLog[]
+
+  @@map("users")
+}
+
+model Branch {
+  id                 String   @id @default(uuid())
+  code               String   @unique // e.g. "CABANG-01", "CABANG-02"
+  name               String   // e.g. "BRILink Cabang 1"
+  address            String?
+  phone              String?
+  isActive           Boolean  @default(true)
+  
+  // Saldo Awal Penetapan Owner
+  initialCashBalance Decimal  @default(0) @db.Decimal(18, 2)
+  initialBankBalance Decimal  @default(0) @db.Decimal(18, 2)
+
+  // Saldo Berjalan Realtime
+  currentCashBalance Decimal  @default(0) @db.Decimal(18, 2)
+  currentBankBalance Decimal  @default(0) @db.Decimal(18, 2)
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  users              User[]
+  transactions       Transaction[]
+  mutations          BalanceMutation[]
+  shifts             CashierShift[]
+  auditLogs          AuditLog[]
+
+  @@map("branches")
+}
+
+model TransactionCategory {
+  id                   String        @id @default(uuid())
+  code                 String        @unique // e.g. "TF_BRI", "TF_INTERBANK", "TARIK_TUNAI", "SETOR_TUNAI"
+  name                 String        // e.g. "Transfer Sesama BRI", "Tarik Tunai"
+  description          String?
+  cashFlow             FlowDirection @default(IN)  // Dampak ke Kas Fisik
+  bankFlow             FlowDirection @default(OUT) // Dampak ke Saldo Rekening/EDC
+  defaultCustomerAdmin Decimal       @default(0) @db.Decimal(18, 2)
+  defaultBankFee       Decimal       @default(0) @db.Decimal(18, 2)
+  isActive             Boolean       @default(true)
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  transactions         Transaction[]
+  feeSettings          BankFeeSetting[]
+
+  @@map("transaction_categories")
+}
+
+model Transaction {
+  id                  String             @id @default(uuid())
+  transactionNo       String             @unique // e.g. "TRX-20261120-0001"
+  branchId            String
+  branch              Branch             @relation(fields: [branchId], references: [id])
+  userId              String
+  user                User               @relation(fields: [userId], references: [id])
+  categoryId          String
+  category            TransactionCategory @relation(fields: [categoryId], references: [id])
+  
+  customerName        String?
+  customerPhone       String?
+  notes               String?
+
+  // Detail Finansial Akurat (Decimal)
+  nominal             Decimal            @db.Decimal(18, 2)
+  customerAdmin       Decimal            @db.Decimal(18, 2)
+  bankFee             Decimal            @db.Decimal(18, 2)
+  netProfit           Decimal            @db.Decimal(18, 2) // customerAdmin - bankFee
+
+  // Uang yang diterima vs dikeluarkan
+  cashReceived        Decimal            @default(0) @db.Decimal(18, 2)
+  cashGiven           Decimal            @default(0) @db.Decimal(18, 2)
+  bankDeducted        Decimal            @default(0) @db.Decimal(18, 2)
+  bankReceived        Decimal            @default(0) @db.Decimal(18, 2)
+
+  status              TransactionStatus  @default(COMPLETED)
+  idempotencyKey      String?            @unique
+  reversalReason      String?
+  reversedAt          DateTime?
+  reversedByUserId    String?
+
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  mutations           BalanceMutation[]
+
+  @@index([branchId, createdAt])
+  @@index([userId, createdAt])
+  @@index([status])
+  @@map("transactions")
+}
+
+model BalanceMutation {
+  id            String       @id @default(uuid())
+  branchId      String
+  branch        Branch       @relation(fields: [branchId], references: [id])
+  userId        String
+  user          User         @relation(fields: [userId], references: [id])
+  transactionId String?
+  transaction   Transaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+
+  mutationType  MutationType
+  accountType   AccountType  // CASH atau BANK
+  amount        Decimal      @db.Decimal(18, 2) // Positif jika masuk, negatif jika keluar
+  balanceBefore Decimal      @db.Decimal(18, 2)
+  balanceAfter  Decimal      @db.Decimal(18, 2)
+  reason        String
+  notes         String?
+  timestamp     DateTime     @default(now())
+
+  @@index([branchId, accountType, timestamp])
+  @@map("balance_mutations")
+}
+
+model CashierShift {
+  id           String      @id @default(uuid())
+  branchId     String
+  branch       Branch      @relation(fields: [branchId], references: [id])
+  userId       String
+  user         User        @relation(fields: [userId], references: [id])
+  
+  startTime    DateTime    @default(now())
+  endTime      DateTime?
+  
+  startingCash Decimal     @db.Decimal(18, 2)
+  endingCash   Decimal?    @db.Decimal(18, 2)
+  expectedCash Decimal?    @db.Decimal(18, 2)
+  cashVariance Decimal?    @db.Decimal(18, 2) // Selisih kas
+  
+  status       ShiftStatus @default(OPEN)
+  notes        String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([branchId, userId, status])
+  @@map("cashier_shifts")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  branchId   String?
+  branch     Branch?  @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  
+  action     String   // e.g. "CREATE_TRANSACTION", "REVERSAL", "UPDATE_BALANCE", "LOGIN"
+  entity     String   // e.g. "Transaction", "Branch", "User"
+  entityId   String?
+  oldValue   String?  @db.Text
+  newValue   String?  @db.Text
+  ipAddress  String?
+  userAgent  String?
+  timestamp  DateTime @default(now())
+
+  @@index([action, timestamp])
+  @@index([entity, entityId])
+  @@map("audit_logs")
+}
+
+model BankFeeSetting {
+  id                 String              @id @default(uuid())
+  categoryId         String
+  category           TransactionCategory @relation(fields: [categoryId], references: [id])
+  minNominal         Decimal             @db.Decimal(18, 2)
+  maxNominal         Decimal             @db.Decimal(18, 2)
+  defaultBankFee     Decimal             @db.Decimal(18, 2)
+  defaultCustomerFee Decimal             @db.Decimal(18, 2)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  @@index([categoryId, minNominal, maxNominal])
+  @@map("bank_fee_settings")
+}
