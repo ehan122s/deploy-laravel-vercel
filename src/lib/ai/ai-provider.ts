@@ -206,12 +206,19 @@ async function runOpenAICompatibleProvider(
   let finalReply = "";
 
   for (let turn = 0; turn < MAX_TOOL_TURNS; turn++) {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    };
+    // OpenRouter requires HTTP-Referer and X-Title headers
+    if (endpoint.includes("openrouter.ai")) {
+      headers["HTTP-Referer"] = process.env.NEXTAUTH_URL || "https://brilink-eight.vercel.app";
+      headers["X-Title"] = "BRILink Management System";
+    }
+
     const res = await fetch(`${endpoint}/chat/completions`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
+      headers,
       body: JSON.stringify({
         model,
         messages,
