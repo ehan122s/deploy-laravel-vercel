@@ -573,6 +573,7 @@ function mapAuditLog(a: AuditWithUser): AuditLogData {
 
 // === DATABASE CONNECTION & AUTO-SEED GUARD ===
 let lastDbVerifiedAt = 0;
+let lastDbFailedAt = 0;
 let seedVerifiedInProcess = false;
 
 async function ensureDatabaseSeeded(): Promise<void> {
@@ -672,18 +673,23 @@ async function checkPrisma(): Promise<boolean> {
   }
 
   const now = Date.now();
-  if (now - lastDbVerifiedAt < 30_000) {
+  if (lastDbVerifiedAt > 0 && now - lastDbVerifiedAt < 30_000) {
     return true;
+  }
+  if (lastDbFailedAt > 0 && now - lastDbFailedAt < 15_000) {
+    return false;
   }
 
   try {
     await prisma.$queryRaw`SELECT 1`;
     await ensureDatabaseSeeded();
     lastDbVerifiedAt = now;
+    lastDbFailedAt = 0;
     return true;
   } catch (err) {
     console.warn("Database check failed, using fallback store:", err);
     lastDbVerifiedAt = 0;
+    lastDbFailedAt = now;
     return false;
   }
 }

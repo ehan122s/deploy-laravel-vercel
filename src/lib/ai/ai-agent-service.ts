@@ -164,8 +164,11 @@ function classifyFallbackIntent(text: string): string {
   if (/\b(selisih|anomali|duplikat|ganda|aneh|audit|periksa saldo|cek masalah|alert|peringatan|pending)\b/.test(q)) {
     return "anomaly";
   }
-  if (/\b(bandingkan|komparasi|mana yang paling|lebih tinggi|lebih untung|paling banyak|terbanyak|performa cabang)\b/.test(q)) {
+  if (/\b(bandingkan|komparasi|mana yang paling|lebih tinggi|lebih untung|lebih menguntungkan|paling banyak|paling menguntungkan|paling cuan|terbanyak|performa cabang|cabang terbaik|cabang unggul)\b/.test(q)) {
     return "compare";
+  }
+  if (/\b(bantu\s+input|cara\s+input|format\s+input|siapkan\s+draft|buat\s+draft)\b/.test(q)) {
+    return "input_guide";
   }
   if (/\b(performa kasir|kinerja kasir|aktivitas kasir|semua kasir|kasir mana)\b/.test(q)) {
     return "cashier_perf";
@@ -285,6 +288,23 @@ async function runDeterministicIndonesianAssistant(
   const effectivePeriod = period || (intent === "report" ? "this_month" : "today");
 
   // 4. Execute backend tool according to intent
+  if (intent === "input_guide") {
+    return {
+      replyText: [
+        `Siap! Untuk menyiapkan draft transaksi otomatis, ketik detail jenis layanan, nominal, biaya admin customer, dan potongan bank.`,
+        ``,
+        `Contoh:`,
+        `- *"Saya mau input transfer 1 juta, admin 10 ribu dan potongan bank 5 ribu"*`,
+        `- *"Catat tarik tunai 500rb admin 8rb potongan bank 2rb"*`,
+        `- *"Input token listrik 200 ribu admin 3 ribu"*`,
+        ``,
+        `Saya akan menghitung laba bersih, mengecek kecukupan saldo kas/rekening cabang **${ctx.branchName || "terkait"}**, lalu menyiapkan tombol pra-isi formulir untuk Anda konfirmasi.`,
+      ].join("\n"),
+      toolName: null,
+      structuredPayload: null,
+    };
+  }
+
   if (intent === "greeting") {
     const roleHint =
       ctx.role === Role.OWNER
