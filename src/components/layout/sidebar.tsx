@@ -14,6 +14,7 @@ import {
   Clock,
   LogOut,
   ChevronRight,
+  Bot,
 } from "lucide-react";
 import { logoutAction } from "@/app/actions/auth-actions";
 
@@ -28,6 +29,7 @@ export function Sidebar({ role, userName, branchName }: SidebarProps) {
 
   const ownerNav = [
     { name: "Dashboard Overview", href: "/owner", icon: LayoutDashboard },
+    { name: "BRILink AI Assistant", href: "/owner/ai", icon: Bot },
     { name: "Manajemen Saldo Cabang", href: "/owner/branches", icon: Building2 },
     { name: "Monitoring Kasir", href: "/owner/cashiers", icon: Users },
     { name: "Semua Transaksi", href: "/owner/transactions", icon: Receipt },
@@ -39,6 +41,7 @@ export function Sidebar({ role, userName, branchName }: SidebarProps) {
   const cashierNav = [
     { name: "Dashboard Kasir", href: "/cashier", icon: LayoutDashboard },
     { name: "Input Transaksi Baru", href: "/cashier/transaction", icon: PlusCircle, highlight: true },
+    { name: "BRILink AI Assistant", href: "/cashier/ai", icon: Bot },
     { name: "Riwayat Transaksi", href: "/cashier/history", icon: Receipt },
     { name: "Laporan Harian Kasir", href: "/cashier/reports", icon: FileSpreadsheet },
   ];

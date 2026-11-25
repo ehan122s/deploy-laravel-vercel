@@ -14,6 +14,7 @@ import {
   Smartphone,
   ChevronRight,
   Info,
+  Bot,
 } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -27,6 +28,13 @@ export default async function OwnerProfilePage() {
   const branches = await DataService.getBranches();
 
   const menuItems = [
+    {
+      title: "BRILink AI Assistant",
+      desc: "Tanya saldo, analisis laba & buat laporan otomatis",
+      href: "/owner/ai",
+      icon: Bot,
+      badge: "AI Agent",
+    },
     {
       title: "Monitoring & Akun Kasir",
       desc: `Kelola kasir ${branches.map((b) => b.name).join(" & ") || "semua cabang"}`,

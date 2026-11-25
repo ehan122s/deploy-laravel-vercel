@@ -1,5 +1,7 @@
 import { getSession } from "@/lib/auth";
 import { DataService } from "@/lib/data-service";
+import { getAIUserContext } from "@/lib/session-context";
+import { runAnomalyScan } from "@/lib/ai/anomaly-detector";
 import { DashboardShell } from "@/components/layout/dashboard-layout";
 import { DashboardCharts } from "@/components/dashboard/dashboard-charts";
 import { TransactionTable } from "@/components/transaction/transaction-table";
@@ -17,6 +19,8 @@ import {
   ShieldCheck,
   ChevronRight,
   Sparkles,
+  Bot,
+  AlertTriangle,
 } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -46,6 +50,11 @@ export default async function OwnerDashboardPage({ searchParams }: OwnerDashboar
     limit: 15,
   });
 
+  // Scan anomaly alerts for Owner attention
+  const aiCtx = await getAIUserContext();
+  const anomalyScan = aiCtx ? await runAnomalyScan(aiCtx, branchParam) : null;
+  const unreadAlerts = anomalyScan ? anomalyScan.alerts.filter((a) => !a.isRead) : [];
+
   return (
     <DashboardShell
       role="OWNER"
@@ -59,6 +68,32 @@ export default async function OwnerDashboardPage({ searchParams }: OwnerDashboar
       branches={allBranches}
     >
       <div className="space-y-4 sm:space-y-6">
+        {/* AI Alert Banner if system detected items needing Owner inspection */}
+        {unreadAlerts.length > 0 && (
+          <div className="bg-amber-50 border border-amber-200 rounded-3xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-xs sm:text-sm font-extrabold text-amber-950">
+                  BRILink AI mendeteksi {unreadAlerts.length} indikasi yang perlu diperiksa
+                </p>
+                <p className="text-[11px] text-amber-800 mt-0.5 line-clamp-1">
+                  {unreadAlerts[0].title}: {unreadAlerts[0].description}
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/owner/ai?prompt=Periksa%20selisih%20saldo%20dan%20anomali%20terbaru"
+              className="px-3.5 py-2 rounded-2xl bg-[#002D62] hover:bg-[#003B7E] text-white text-xs font-bold flex items-center justify-center gap-1.5 flex-shrink-0 transition-colors"
+            >
+              <Bot className="w-4 h-4 text-emerald-400" />
+              <span>Periksa dengan AI</span>
+            </Link>
+          </div>
+        )}
+
         {/* KPI Cards Header (Responsive Mobile-First Grid) */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {/* 1. Total Seluruh Saldo */}

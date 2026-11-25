@@ -5,6 +5,9 @@ import { PWAProvider } from "@/components/pwa/pwa-provider";
 import { InactivityTimer } from "@/components/auth/inactivity-timer";
 import { OfflineNoticeBanner } from "@/components/pwa/offline-indicator";
 import { InstallBanner } from "@/components/pwa/install-banner";
+import { FloatingAIButton } from "@/components/ai/floating-ai-button";
+import { getAIUserContext } from "@/lib/session-context";
+import { getUnreadAlertCount } from "@/lib/ai/anomaly-detector";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -16,7 +19,7 @@ interface DashboardLayoutProps {
   branches?: { id: string; name: string; code: string }[];
 }
 
-export function DashboardShell({
+export async function DashboardShell({
   children,
   role,
   userName,
@@ -25,6 +28,14 @@ export function DashboardShell({
   subtitle,
   branches = [],
 }: DashboardLayoutProps) {
+  let unreadAlertCount = 0;
+  if (role === "OWNER") {
+    const ctx = await getAIUserContext();
+    if (ctx) {
+      unreadAlertCount = await getUnreadAlertCount(ctx);
+    }
+  }
+
   return (
     <PWAProvider>
       <div className="min-h-screen bg-[#F8FAFC] flex font-sans text-slate-800 antialiased select-none">
@@ -55,6 +66,9 @@ export function DashboardShell({
             {children}
           </main>
         </div>
+
+        {/* Floating BRILink AI Assistant Button */}
+        <FloatingAIButton role={role} unreadAlertCount={unreadAlertCount} />
 
         {/* Mobile Bottom Navigation (shown on screens < md) */}
         <BottomNav role={role} />

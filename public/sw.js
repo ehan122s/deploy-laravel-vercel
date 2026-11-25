@@ -8,7 +8,7 @@
  * - Jika koneksi offline, tampilkan halaman /offline yang ramah pengguna.
  */
 
-const CACHE_NAME = "brilink-pwa-v1.0.3";
+const CACHE_NAME = "brilink-pwa-v1.0.4";
 
 // Asset statis inti yang di-precache saat instalasi service worker
 const STATIC_PRECACHE_URLS = [
@@ -61,8 +61,8 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 2. Abaikan chrome-extension, API internal Next.js hot reload, dll
-  if (!url.protocol.startsWith("http")) {
+  // 2. Abaikan chrome-extension, API internal Next.js hot reload, dan seluruh endpoint /api/
+  if (!url.protocol.startsWith("http") || url.pathname.startsWith("/api/")) {
     return;
   }
 

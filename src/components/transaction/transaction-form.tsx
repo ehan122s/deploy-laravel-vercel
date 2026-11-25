@@ -18,28 +18,56 @@ import {
   WifiOff,
   X,
   HelpCircle,
+  Sparkles,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+
+export interface TransactionInitialDraft {
+  fromAi?: boolean;
+  categoryCode?: string;
+  nominal?: number;
+  customerAdmin?: number;
+  bankFee?: number;
+  customerName?: string;
+  paymentMethod?: string;
+  notes?: string;
+}
 
 interface TransactionFormProps {
   categories: CategoryData[];
   branch: BranchData;
   cashierName: string;
+  initialDraft?: TransactionInitialDraft;
 }
 
-export function TransactionForm({ categories, branch, cashierName }: TransactionFormProps) {
+export function TransactionForm({ categories, branch, cashierName, initialDraft }: TransactionFormProps) {
   const router = useRouter();
   const { isOnline } = usePWA();
 
-  const [selectedCategoryCode, setSelectedCategoryCode] = useState<string>(
-    categories[0]?.code || "TF_BRI"
+  const defaultCatCode =
+    initialDraft?.categoryCode && categories.some((c) => c.code === initialDraft.categoryCode)
+      ? initialDraft.categoryCode
+      : categories[0]?.code || "TF_BRI";
+
+  const [selectedCategoryCode, setSelectedCategoryCode] = useState<string>(defaultCatCode);
+  const [nominalStr, setNominalStr] = useState<string>(
+    initialDraft?.nominal !== undefined && !isNaN(initialDraft.nominal)
+      ? String(initialDraft.nominal)
+      : "1000000"
   );
-  const [nominalStr, setNominalStr] = useState<string>("1000000");
-  const [customerAdminStr, setCustomerAdminStr] = useState<string>("10000");
-  const [bankFeeStr, setBankFeeStr] = useState<string>("5000");
-  const [customerName, setCustomerName] = useState<string>("");
-  const [paymentMethod, setPaymentMethod] = useState<string>("TUNAI");
-  const [notes, setNotes] = useState<string>("");
+  const [customerAdminStr, setCustomerAdminStr] = useState<string>(
+    initialDraft?.customerAdmin !== undefined && !isNaN(initialDraft.customerAdmin)
+      ? String(initialDraft.customerAdmin)
+      : "10000"
+  );
+  const [bankFeeStr, setBankFeeStr] = useState<string>(
+    initialDraft?.bankFee !== undefined && !isNaN(initialDraft.bankFee)
+      ? String(initialDraft.bankFee)
+      : "5000"
+  );
+  const [customerName, setCustomerName] = useState<string>(initialDraft?.customerName || "");
+  const [paymentMethod, setPaymentMethod] = useState<string>(initialDraft?.paymentMethod || "TUNAI");
+  const [notes, setNotes] = useState<string>(initialDraft?.notes || "");
 
   const [idempotencyKey, setIdempotencyKey] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -175,6 +203,18 @@ export function TransactionForm({ categories, branch, cashierName }: Transaction
               {branch.name}
             </span>
           </div>
+
+          {initialDraft?.fromAi && (
+            <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex items-start gap-2.5">
+              <Sparkles className="w-4 h-4 flex-shrink-0 text-emerald-600 mt-0.5" />
+              <div>
+                <p className="font-bold">Pra-Isi dari BRILink AI Assistant</p>
+                <p className="text-[11px] text-emerald-800 mt-0.5">
+                  Nominal dan biaya admin sudah diisi sesuai percakapan Anda. Periksa kembali lalu tekan tombol simpan untuk konfirmasi akhir.
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Offline alert inside form */}
           {!isOnline && (

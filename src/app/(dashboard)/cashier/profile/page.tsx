@@ -12,6 +12,7 @@ import {
   ChevronRight,
   Info,
   Clock,
+  Bot,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -19,6 +20,13 @@ export default async function CashierProfilePage() {
   const { session, branch } = await requireCashierContext();
 
   const menuItems = [
+    {
+      title: "BRILink AI Assistant",
+      desc: "Tanya saldo cabang & bantu input transaksi cepat",
+      href: "/cashier/ai",
+      icon: Bot,
+      badge: "AI Agent",
+    },
     {
       title: "Laporan Harian Kasir",
       desc: "Rekap pendapatan admin & laba shift Anda",

@@ -60,6 +60,8 @@ model User {
   mutations        BalanceMutation[]
   shifts           CashierShift[]
   auditLogs        AuditLog[]
+  aiConversations  AIConversation[]
+  aiUsageLogs      AIUsageLog[]
 
   @@map("users")
 }
@@ -88,6 +90,9 @@ model Branch {
   mutations          BalanceMutation[]
   shifts             CashierShift[]
   auditLogs          AuditLog[]
+  aiConversations    AIConversation[]
+  aiUsageLogs        AIUsageLog[]
+  aiAlerts           AIAlert[]
 
   @@map("branches")
 }
@@ -235,4 +240,75 @@ model BankFeeSetting {
 
   @@index([categoryId, minNominal, maxNominal])
   @@map("bank_fee_settings")
+}
+
+// === AI AGENT MODELS ===
+
+model AIConversation {
+  id        String      @id @default(uuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  branchId  String?
+  branch    Branch?     @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  title     String      @default("Percakapan Baru")
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  messages  AIMessage[]
+
+  @@index([userId, updatedAt])
+  @@map("ai_conversations")
+}
+
+model AIMessage {
+  id             String         @id @default(uuid())
+  conversationId String
+  conversation   AIConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           String         // "user" | "assistant"
+  content        String         @db.Text
+  toolName       String?
+  structuredData String?        @db.Text
+  tokensUsed     Int            @default(0)
+  createdAt      DateTime       @default(now())
+
+  @@index([conversationId, createdAt])
+  @@map("ai_messages")
+}
+
+model AIUsageLog {
+  id               String   @id @default(uuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  branchId         String?
+  branch           Branch?  @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  provider         String
+  model            String
+  promptTokens     Int      @default(0)
+  completionTokens Int      @default(0)
+  totalTokens      Int      @default(0)
+  latencyMs        Int      @default(0)
+  status           String   // "SUCCESS" | "FALLBACK" | "RATE_LIMITED" | "ERROR"
+  errorMessage     String?  @db.Text
+  createdAt        DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("ai_usage_logs")
+}
+
+model AIAlert {
+  id            String    @id @default(uuid())
+  branchId      String?
+  branch        Branch?   @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  transactionId String?
+  alertType     String    // "UNUSUAL_NOMINAL" | "POTENTIAL_DUPLICATE" | "BALANCE_DISCREPANCY" | "TRANSACTION_SPIKE" | "PROFIT_DROP" | "PENDING_TRANSACTION" | "UNUSUAL_ACTIVITY"
+  severity      String    @default("WARNING") // "INFO" | "WARNING" | "CRITICAL"
+  title         String
+  description   String    @db.Text
+  dedupeKey     String?   @unique
+  isRead        Boolean   @default(false)
+  resolvedAt    DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@index([branchId, isRead, createdAt])
+  @@map("ai_alerts")
 }
