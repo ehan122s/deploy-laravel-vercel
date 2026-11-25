@@ -20,9 +20,10 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // 1. If accessing login page while already logged in
+  // 1. If accessing login page while already logged in (unless explicitly re-authenticating)
   if (pathname === "/login") {
-    if (session) {
+    const forceReauth = request.nextUrl.searchParams.get("reauth") === "1";
+    if (session && !forceReauth) {
       if (session.role === "OWNER") {
         return NextResponse.redirect(new URL("/owner", request.url));
       } else {

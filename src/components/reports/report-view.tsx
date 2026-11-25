@@ -246,7 +246,7 @@ export function ReportView({ branches, cashiers, initialTransactions }: ReportVi
               onChange={(e) => setSelectedBranch(e.target.value)}
               className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-800"
             >
-              <option value="ALL">Semua Cabang (Pusat & Pasar)</option>
+              <option value="ALL">Semua Cabang ({branches.map((b) => b.name).join(" & ")})</option>
               {branches.map((b) => (
                 <option key={b.id} value={b.id}>
                   {b.name}

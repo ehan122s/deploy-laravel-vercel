@@ -54,7 +54,7 @@ export default async function OwnerDashboardPage({ searchParams }: OwnerDashboar
       subtitle={
         selectedBranch
           ? `Monitoring: ${selectedBranch.name}`
-          : "Monitoring Gabungan Cabang 1 & Cabang 2"
+          : `Monitoring Gabungan ${allBranches.map((b) => b.name).join(" & ") || "Semua Cabang"}`
       }
       branches={allBranches}
     >

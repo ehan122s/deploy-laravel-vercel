@@ -2,7 +2,7 @@
 
 Sistem Pembukuan, Pencatatan Transaksi, dan Monitoring Keuangan Agen BRILink Multi-Cabang berbasis **Next.js 14 (App Router)**, **TypeScript**, **Tailwind CSS**, **Prisma ORM**, dan **Progressive Web App (PWA)**.
 
-Aplikasi dirancang khusus untuk pemilik usaha agen BRILink dengan 2 cabang operasional (Pusat & Pasar) dan dapat diinstal langsung di HP Android layaknya aplikasi native tanpa Google PlayStore.
+Aplikasi dirancang khusus untuk pemilik usaha agen BRILink dengan 2 cabang operasional (**Hani BRILink** & **Rahmat Berkah**) dan dapat diinstal langsung di HP Android layaknya aplikasi native tanpa Google PlayStore.
 
 ---
 
@@ -29,11 +29,9 @@ Aplikasi dirancang khusus untuk pemilik usaha agen BRILink dengan 2 cabang opera
 
 | Role | Username | Password | Penugasan Cabang |
 | :--- | :--- | :--- | :--- |
-| **Owner** | `owner` | `owner123` | **Semua Cabang** (Pusat & Pasar) |
-| **Kasir 1** | `kasir1` | `kasir123` | **BRILink Cabang 1 (Pusat)** |
-| **Kasir 2** | `kasir2` | `kasir123` | **BRILink Cabang 2 (Pasar)** |
-
-*Tersedia tombol akses cepat 1-klik di halaman `/login` untuk pengujian instan.*
+| **Owner** | `owner` | `owner123` | **Semua Cabang** (Hani BRILink & Rahmat Berkah) |
+| **Kasir Cabang 1** | `kasir1` | `kasir123` | **Hani BRILink** |
+| **Kasir Cabang 2** | `kasir2` | `kasir123` | **Rahmat Berkah** |
 
 ---
 

@@ -18,12 +18,13 @@ async function main() {
 
   console.log("🧹 Cleaned existing tables.");
 
-  // 2. Buat 2 Cabang Default
+  // 2. Buat 2 Cabang Default dengan ID deterministik
   const branch1 = await prisma.branch.create({
     data: {
+      id: "branch-01",
       code: "CABANG-01",
-      name: "BRILink Cabang 1 (Pusat)",
-      address: "Jl. Sudirman No. 45, Sentra Niaga",
+      name: "Hani BRILink",
+      address: "Cabang 1 - Hani BRILink",
       phone: "081234567801",
       initialCashBalance: 10000000.00, // Rp10.000.000
       initialBankBalance: 25000000.00, // Rp25.000.000
@@ -35,9 +36,10 @@ async function main() {
 
   const branch2 = await prisma.branch.create({
     data: {
+      id: "branch-02",
       code: "CABANG-02",
-      name: "BRILink Cabang 2 (Pasar)",
-      address: "Jl. Pasar Lama No. 12, Kios A-03",
+      name: "Rahmat Berkah",
+      address: "Cabang 2 - Rahmat Berkah",
       phone: "081234567802",
       initialCashBalance: 10000000.00, // Rp10.000.000
       initialBankBalance: 20000000.00, // Rp20.000.000
@@ -49,50 +51,29 @@ async function main() {
 
   console.log(`🏢 Branches created: ${branch1.name} & ${branch2.name}`);
 
-  // 3. Buat Pengguna: Owner, User, Kasir masing-masing cabang
+  // 3. Buat Pengguna: Owner & Kasir masing-masing cabang
   const passwordSalt = await bcrypt.genSalt(10);
   const ownerPasswordHash = await bcrypt.hash("owner123", passwordSalt);
-  const userPasswordHash = await bcrypt.hash("user123", passwordSalt);
   const cashierPasswordHash = await bcrypt.hash("kasir123", passwordSalt);
 
   const owner = await prisma.user.create({
     data: {
+      id: "user-owner",
       username: "owner",
       passwordHash: ownerPasswordHash,
-      name: "Bapak Hendra (Owner BRILink)",
+      name: "Owner (Hani BRILink & Rahmat Berkah)",
       role: Role.OWNER,
       branchId: null, // Akses global seluruh cabang
       isActive: true,
     },
   });
 
-  const defaultUser = await prisma.user.create({
-    data: {
-      username: "user",
-      passwordHash: userPasswordHash,
-      name: "Operator / Kasir (User)",
-      role: Role.CASHIER,
-      branchId: branch1.id,
-      isActive: true,
-    },
-  });
-
-  const defaultKasir = await prisma.user.create({
-    data: {
-      username: "kasir",
-      passwordHash: cashierPasswordHash,
-      name: "Kasir Petugas",
-      role: Role.CASHIER,
-      branchId: branch1.id,
-      isActive: true,
-    },
-  });
-
   const cashier1 = await prisma.user.create({
     data: {
+      id: "user-kasir1",
       username: "kasir1",
       passwordHash: cashierPasswordHash,
-      name: "Siti Rahmawati (Kasir Cabang 1)",
+      name: "Kasir Hani BRILink",
       role: Role.CASHIER,
       branchId: branch1.id,
       isActive: true,
@@ -101,20 +82,22 @@ async function main() {
 
   const cashier2 = await prisma.user.create({
     data: {
+      id: "user-kasir2",
       username: "kasir2",
       passwordHash: cashierPasswordHash,
-      name: "Budi Santoso (Kasir Cabang 2)",
+      name: "Kasir Rahmat Berkah",
       role: Role.CASHIER,
       branchId: branch2.id,
       isActive: true,
     },
   });
 
-  console.log(`👤 Users created: ${owner.username} (Owner), ${defaultUser.username} (User), ${defaultKasir.username} (Kasir), ${cashier1.username} (Kasir 1), ${cashier2.username} (Kasir 2)`);
+  console.log(`👤 Users created: ${owner.username} (Owner), ${cashier1.username} (Hani BRILink), ${cashier2.username} (Rahmat Berkah)`);
 
   // 4. Buat Kategori Transaksi BRILink Lengkap
   const categories = [
     {
+      id: "cat-tf-bri",
       code: "TF_BRI",
       name: "Transfer Sesama BRI",
       description: "Transfer dana antar rekening Bank BRI",
@@ -124,6 +107,7 @@ async function main() {
       defaultBankFee: 5000.00,
     },
     {
+      id: "cat-tf-interbank",
       code: "TF_INTERBANK",
       name: "Transfer Antarbank (Online/BI-FAST)",
       description: "Transfer dari BRI ke bank lain (BCA, Mandiri, BNI, dll)",
@@ -133,6 +117,7 @@ async function main() {
       defaultBankFee: 6500.00,
     },
     {
+      id: "cat-tarik-tunai",
       code: "TARIK_TUNAI",
       name: "Tarik Tunai",
       description: "Penarikan uang tunai oleh customer via kartu ATM / EDC",
@@ -142,6 +127,7 @@ async function main() {
       defaultBankFee: 2000.00,
     },
     {
+      id: "cat-setor-tunai",
       code: "SETOR_TUNAI",
       name: "Setor Tunai",
       description: "Customer menyetor tunai ke rekening BRI",
@@ -151,6 +137,7 @@ async function main() {
       defaultBankFee: 5000.00,
     },
     {
+      id: "cat-pln",
       code: "PLN_TOKEN",
       name: "Pembelian Token Listrik PLN",
       description: "Isi ulang token prabayar PLN",
@@ -160,6 +147,7 @@ async function main() {
       defaultBankFee: 2500.00,
     },
     {
+      id: "cat-pulsa",
       code: "PULSA_DATA",
       name: "Pembelian Pulsa & Paket Data",
       description: "Pulsa dan kuota internet seluruh operator",
@@ -169,6 +157,7 @@ async function main() {
       defaultBankFee: 1500.00,
     },
     {
+      id: "cat-ewallet",
       code: "TOPUP_EWALLET",
       name: "Top Up E-Wallet (DANA/OVO/GoPay/Shopee)",
       description: "Isi saldo dompet digital nasabah",
@@ -178,6 +167,7 @@ async function main() {
       defaultBankFee: 2000.00,
     },
     {
+      id: "cat-bills",
       code: "PAYMENT_BILLS",
       name: "Pembayaran BPJS / PDAM / Cicilan",
       description: "Pembayaran tagihan rutin masyarakat",
@@ -187,7 +177,8 @@ async function main() {
       defaultBankFee: 2500.00,
     },
     {
-      code: "OTHER",
+      id: "cat-other",
+      code: "LAINNYA",
       name: "Transaksi Lainnya",
       description: "Layanan jasa transaksi perbankan lainnya",
       cashFlow: FlowDirection.IN,
@@ -214,7 +205,7 @@ async function main() {
         amount: 10000000.00,
         balanceBefore: 0.00,
         balanceAfter: 10000000.00,
-        reason: "Penetapan Saldo Awal Kas Fisik Cabang 1 oleh Owner",
+        reason: "Penetapan Saldo Awal Kas Fisik Hani BRILink oleh Owner",
       },
       {
         branchId: branch1.id,
@@ -224,7 +215,7 @@ async function main() {
         amount: 25000000.00,
         balanceBefore: 0.00,
         balanceAfter: 25000000.00,
-        reason: "Penetapan Saldo Awal Rekening Operasional Cabang 1 oleh Owner",
+        reason: "Penetapan Saldo Awal Rekening Operasional Hani BRILink oleh Owner",
       },
       {
         branchId: branch2.id,
@@ -234,7 +225,7 @@ async function main() {
         amount: 10000000.00,
         balanceBefore: 0.00,
         balanceAfter: 10000000.00,
-        reason: "Penetapan Saldo Awal Kas Fisik Cabang 2 oleh Owner",
+        reason: "Penetapan Saldo Awal Kas Fisik Rahmat Berkah oleh Owner",
       },
       {
         branchId: branch2.id,
@@ -244,7 +235,7 @@ async function main() {
         amount: 20000000.00,
         balanceBefore: 0.00,
         balanceAfter: 20000000.00,
-        reason: "Penetapan Saldo Awal Rekening Operasional Cabang 2 oleh Owner",
+        reason: "Penetapan Saldo Awal Rekening Operasional Rahmat Berkah oleh Owner",
       },
     ],
   });
@@ -257,7 +248,7 @@ async function main() {
       action: "INITIALIZE_SYSTEM",
       entity: "Branch",
       entityId: branch1.id,
-      newValue: "Sistem BRILink diinisialisasi dengan Cabang 1 dan Cabang 2",
+      newValue: "Sistem BRILink diinisialisasi dengan cabang Hani BRILink dan Rahmat Berkah",
     },
   });
 

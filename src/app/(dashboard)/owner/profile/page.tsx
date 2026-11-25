@@ -29,7 +29,7 @@ export default async function OwnerProfilePage() {
   const menuItems = [
     {
       title: "Monitoring & Akun Kasir",
-      desc: "Kelola kasir Cabang 1 & Cabang 2",
+      desc: `Kelola kasir ${branches.map((b) => b.name).join(" & ") || "semua cabang"}`,
       href: "/owner/cashiers",
       icon: Users,
       badge: "Kasir",

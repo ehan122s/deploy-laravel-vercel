@@ -8,7 +8,7 @@
  * - Jika koneksi offline, tampilkan halaman /offline yang ramah pengguna.
  */
 
-const CACHE_NAME = "brilink-pwa-v1.0.1";
+const CACHE_NAME = "brilink-pwa-v1.0.3";
 
 // Asset statis inti yang di-precache saat instalasi service worker
 const STATIC_PRECACHE_URLS = [

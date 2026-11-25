@@ -162,7 +162,7 @@ export function BranchAdjustModal({ branches }: BranchAdjustModalProps) {
                     📤 Penarikan Modal (Owner Tarik Dana Keluar)
                   </option>
                   <option value={MutationType.INTER_BRANCH_TRANSFER}>
-                    🔄 Transfer Saldo Antar Cabang 1 & Cabang 2
+                    🔄 Transfer Saldo Antar Cabang ({branches.map((b) => b.name).join(" ↔ ")})
                   </option>
                   <option value={MutationType.ADJUSTMENT}>
                     ⚖️ Penyesuaian Saldo Berita Acara (Opname Fisik)

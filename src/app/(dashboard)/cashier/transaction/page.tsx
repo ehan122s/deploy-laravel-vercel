@@ -1,19 +1,10 @@
-import { getSession } from "@/lib/auth";
+import { requireCashierContext } from "@/lib/session-context";
 import { DataService } from "@/lib/data-service";
 import { DashboardShell } from "@/components/layout/dashboard-layout";
 import { TransactionForm } from "@/components/transaction/transaction-form";
-import { redirect } from "next/navigation";
 
 export default async function CashierTransactionPage() {
-  const session = await getSession();
-  if (!session || !session.branchId) {
-    redirect("/login");
-  }
-
-  const branch = await DataService.getBranchById(session.branchId);
-  if (!branch) {
-    redirect("/login");
-  }
+  const { session, branch } = await requireCashierContext();
 
   const categories = await DataService.getCategories();
 

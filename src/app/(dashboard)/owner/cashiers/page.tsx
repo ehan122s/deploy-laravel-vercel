@@ -35,7 +35,7 @@ export default async function OwnerCashiersPage() {
       role="OWNER"
       userName={session.name}
       title="Monitoring & Manajemen Kasir"
-      subtitle="Kelola akun kasir untuk Cabang 1 dan Cabang 2"
+      subtitle={`Kelola akun kasir untuk ${allBranches.map((b) => b.name).join(" & ") || "semua cabang"}`}
       branches={allBranches}
     >
       <CashierManager cashiers={cashiers} branches={allBranches} />

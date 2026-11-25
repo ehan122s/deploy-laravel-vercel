@@ -111,7 +111,7 @@ export default function HomePage() {
             </div>
             <h3 className="text-base font-bold text-slate-900 mb-1.5">Dua Cabang Terintegrasi</h3>
             <p className="text-xs text-slate-600 leading-relaxed">
-              Monitoring Cabang 1 dan Cabang 2 secara real-time. Kasir hanya mengakses cabangnya, sedangkan Owner memantau keseluruhan.
+              Monitoring Hani BRILink dan Rahmat Berkah secara real-time. Kasir hanya mengakses cabangnya, sedangkan Owner memantau keseluruhan.
             </p>
           </div>
         </div>

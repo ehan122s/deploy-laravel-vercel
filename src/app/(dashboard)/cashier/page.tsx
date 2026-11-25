@@ -1,4 +1,4 @@
-import { getSession } from "@/lib/auth";
+import { requireCashierContext } from "@/lib/session-context";
 import { DataService } from "@/lib/data-service";
 import { DashboardShell } from "@/components/layout/dashboard-layout";
 import { TransactionTable } from "@/components/transaction/transaction-table";
@@ -15,18 +15,9 @@ import {
   Sparkles,
 } from "lucide-react";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 
 export default async function CashierDashboardPage() {
-  const session = await getSession();
-  if (!session || !session.branchId) {
-    redirect("/login");
-  }
-
-  const branch = await DataService.getBranchById(session.branchId);
-  if (!branch) {
-    redirect("/login");
-  }
+  const { session, branch } = await requireCashierContext();
 
   // Get cashier's transactions today
   const now = new Date();
