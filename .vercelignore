@@ -1,0 +1,12 @@
+node_modules
+.next
+.git
+.data
+.neon
+.env
+.env.local
+.env.*.local
+flutter-app
+prisma/pgdata
+prisma/pglite-data
+prisma/pglite-db
